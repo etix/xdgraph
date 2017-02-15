@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Package xdgraph provides a simple helper for manipulating Dgraph
+// gRPC responses.
 package xdgraph
 
 import (
@@ -26,112 +28,141 @@ import (
     "github.com/twpayne/go-geom/encoding/wkb"
 )
 
-func ReadResponse(resp *graph.Response) *response {
-    return &response{
+// ReadResponse is the entry point of this package
+// It takes in parameter the response from a gRPC call:
+//  resp, _ := c.Run(...)
+//  xd := xdgraph.ReadResponse(resp)
+//  [...]
+func ReadResponse(resp *graph.Response) *Response {
+    return &Response{
         node: resp.GetN()[0],
     }
 }
 
-type response struct {
+// Response is a struct that carries the current graph.Node.
+type Response struct {
     node *graph.Node
 }
 
-func (r response) First() response {
+// First can be used to access the first attribute without explicitely
+// giving its name.
+func (r Response) First() Response {
     if len(r.node.GetChildren()) == 0 {
-        return response{}
+        return Response{}
     }
-    return response{node: r.node.GetChildren()[0]}
+    return Response{node: r.node.GetChildren()[0]}
 }
 
-func (r response) Attribute(name string) response {
+// Attribute moves to the given attribute name. It must be a children of
+// the current attribute. This can be asserted using the IsNil() function.
+func (r Response) Attribute(name string) Response {
     for _, c := range r.node.GetChildren() {
         if c.GetAttribute() == name {
-            return response{node: c}
+            return Response{node: c}
             break
         }
     }
-    return response{}
+    return Response{}
 }
 
-func (r response) Property(name string) property {
+// Property returns the given property by name.
+func (r Response) Property(name string) Property {
     for _, p := range r.node.GetProperties() {
         if p.GetProp() == name {
-            return property{value: p.GetValue()}
+            return Property{value: p.GetValue()}
         }
     }
-    return property{}
+    return Property{}
 }
 
-func (r response) Uid() uint64 {
+// Uid returns the UID of the current attribute if contained in the response.
+func (r Response) Uid() uint64 {
     return r.node.GetUid()
 }
 
-func (r response) Xid() string {
+// Xid returns the XID of the current attribute if contained in the response.
+func (r Response) Xid() string {
+    // BUG(r): GetXid() doesn't seem to be supported by the upstream
     return r.node.GetXid()
 }
 
-func (r response) String() string {
+// String returns the attribute content in RAW format.
+func (r Response) String() string {
     return proto.CompactTextString(r.node)
 }
 
-func (r response) Json() string {
+// Json returns the attribute content in JSON format.
+func (r Response) Json() string {
     j, _ := json.MarshalIndent(r.node, "", "    ")
     return string(j)
 }
 
-func (r response) IsNil() bool {
+// IsNil returns true if the attribute is not available in the response.
+func (r Response) IsNil() bool {
     return r.node == nil
 }
 
-type property struct {
+// Property is a struct that carries the current graph.Value.
+type Property struct {
     value *graph.Value
 }
 
-func (v property) String() string {
-    return v.value.String()
+// String returns the RAW value
+func (p Property) String() string {
+    return p.value.String()
 }
 
-func (v property) ToString() string {
-    return v.value.GetStrVal()
+// ToString returns the property as a string
+func (p Property) ToString() string {
+    return p.value.GetStrVal()
 }
 
-func (v property) ToBytes() []byte {
-    return v.value.GetBytesVal()
+// ToBytes returns the property as []byte
+func (p Property) ToBytes() []byte {
+    return p.value.GetBytesVal()
 }
 
-func (v property) ToInt() int32 {
-    return v.value.GetIntVal()
+// ToInt returns the property as an int32
+func (p Property) ToInt() int32 {
+    return p.value.GetIntVal()
 }
 
-func (v property) ToBool() bool {
-    return v.value.GetBoolVal()
+// ToBool returns the property as a bool
+func (p Property) ToBool() bool {
+    return p.value.GetBoolVal()
 }
 
-func (v property) ToFloat() float64 {
-    return v.value.GetDoubleVal()
+// ToFloat returns the property as a float64
+func (p Property) ToFloat() float64 {
+    return p.value.GetDoubleVal()
 }
 
-func (v property) ToGeo() geom.T {
-    t, _ := wkb.Unmarshal(v.value.GetGeoVal())
+// ToGeo returns the property as a geom.T
+func (p Property) ToGeo() geom.T {
+    t, _ := wkb.Unmarshal(p.value.GetGeoVal())
     return t
 }
 
-func (v property) ToDate() time.Time {
+// ToDate returns the property as a time.Time
+func (p Property) ToDate() time.Time {
     var t time.Time
-    t.UnmarshalBinary(v.value.GetDateVal())
+    t.UnmarshalBinary(p.value.GetDateVal())
     return t
 }
 
-func (v property) ToDateTime() time.Time {
+// ToDateTime returns the property as a time.Time
+func (p Property) ToDateTime() time.Time {
     var t time.Time
-    t.UnmarshalBinary(v.value.GetDatetimeVal())
+    t.UnmarshalBinary(p.value.GetDatetimeVal())
     return t
 }
 
-func (v property) ToPassword() string {
-    return v.value.GetPasswordVal()
+// ToPassword returns the property as a string
+func (p Property) ToPassword() string {
+    return p.value.GetPasswordVal()
 }
 
-func (v property) IsNil() bool {
-    return v.value == nil
+// IsNil returns true if the property is not available in the response.
+func (p Property) IsNil() bool {
+    return p.value == nil
 }
