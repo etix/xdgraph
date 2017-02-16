@@ -23,7 +23,6 @@ import (
     "time"
 
     "github.com/dgraph-io/dgraph/query/graph"
-    proto "github.com/golang/protobuf/proto"
     "github.com/twpayne/go-geom"
     "github.com/twpayne/go-geom/encoding/wkb"
 )
@@ -88,7 +87,7 @@ func (r Response) Xid() string {
 
 // String returns the attribute content in RAW format.
 func (r Response) String() string {
-    return proto.CompactTextString(r.node)
+    return r.Json()
 }
 
 // Json returns the attribute content in JSON format.
