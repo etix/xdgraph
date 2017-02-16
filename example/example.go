@@ -31,16 +31,25 @@ func main() {
     req.SetQuery(`
         mutation {
             set {
+                <piano> <name> "Piano" .
+                <guitar> <name> "Guitar" .
+
                 <bob> <name> "Bob" .
                 <bob> <age> "27"^^<xs:int> .
-                <bob> <sign> "gemini" .
-                <bob> <address> "somewhere" .
+                <bob> <sign> "Gemini" .
+                <bob> <plays> <piano> .
+
+                <mike> <name> "Mike" .
+                <mike> <age> "42"^^<xs:int> .
+                <mike> <sign> "Scorpio" .
+                <mike> <plays> <guitar> .
 
                 <clara> <name> "Clara" .
                 <clara> <age> "32"^^<xs:int> .
-                <clara> <sign> "taurus" .
+                <clara> <sign> "Taurus" .
 
                 <clara> <follows> <bob> .
+                <clara> <follows> <mike> .
                 <bob> <follow> <clara> .
             }
         }
@@ -51,13 +60,14 @@ func main() {
                 name
                 age
                 sign
-                address
                 follows {
                     _uid_
                     name
                     age
                     sign
-                    address
+                    plays {
+                        name
+                    }
                 }
             }
         }
@@ -70,20 +80,37 @@ func main() {
 
     xd := xdgraph.ReadResponse(resp)
 
-    fmt.Printf("UID: %d\n", xd.Attribute("me").Uid())
-    fmt.Printf("Name: %s\n", xd.Attribute("me").Property("name").ToString())
-    fmt.Printf("Sign (using First()): %s\n", xd.First().Property("sign").ToString())
+    fmt.Printf("Clara's UID: %d\n", xd.Attribute("me").Uid())
+    fmt.Printf("Clara's name: %s\n", xd.Attribute("me").Property("name").ToString())
+    fmt.Printf("Clara's sign (using First()): %s\n", xd.First().Property("sign").ToString())
 
-    //fmt.Printf("Age: %d\n", xd.Attribute("me").Property("age").ToInt()) // See https://github.com/dgraph-io/dgraph/issues/594
+    // Using the model above, we cannot use types until #594 is fixed and released
+    // See https://github.com/dgraph-io/dgraph/issues/594
+    fmt.Printf("Clara's age: %d // If 0 see https://github.com/dgraph-io/dgraph/issues/594\n", xd.Attribute("me").Property("age").ToInt())
 
-    fmt.Printf("Clara follows: %s (%d)\n",
-        xd.Attribute("me").Attribute("follows").Property("name").ToString(),
-        xd.Attribute("me").Attribute("follows").Uid())
+    fmt.Printf("Clara follows:\n")
+    xd.First().Attribute("follows").Each(func(r xdgraph.Response) {
+        fmt.Printf(" - %s (uid %d)\n", r.Property("name").ToString(), r.Uid())
+    })
 
-    fmt.Printf("Is Clara's address set? %t\n", !xd.Attribute("me").Property("address").IsNil())
-    fmt.Printf("Is Bob's address set? %t\n", !xd.Attribute("me").Attribute("follows").Property("address").IsNil())
+    fmt.Printf("Signs of people Clara follows:\n")
+    for _, v := range xd.First().Attribute("follows").Properties("sign") {
+        fmt.Printf(" - %s\n", v.ToString())
+    }
 
-    fmt.Printf("Raw: %s\n", xd.Attribute("me"))
+    fmt.Printf("Instruments played by people Clara follows:\n")
+    xd.First().Attribute("follows").Attribute("plays").Each(func(r xdgraph.Response) {
+        fmt.Printf(" - %s\n", r.Property("name").ToString())
+    })
+
+    fmt.Printf("Which instrument does each person Clara follows plays:\n")
+    xd.First().Attribute("follows").Each(func(r xdgraph.Response) {
+        if r.Attribute("plays").IsNil() {
+            // This person does not play any instrument
+            return
+        }
+        fmt.Printf(" - %s plays %s\n", r.Property("name").ToString(), r.Attribute("plays").Property("name").ToString())
+    })
 
     fmt.Printf("Json (full graph):\n%s\n", xd.Json())
     fmt.Printf("Json (sub graph):\n%s\n", xd.Attribute("me").Attribute("follows").Json())
