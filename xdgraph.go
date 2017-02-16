@@ -34,39 +34,51 @@ import (
 //  [...]
 func ReadResponse(resp *graph.Response) *Response {
     return &Response{
-        node: resp.GetN()[0],
+        nodes: []*graph.Node{resp.GetN()[0]},
     }
 }
 
 // Response is a struct that carries the current graph.Node.
 type Response struct {
-    node *graph.Node
+    nodes []*graph.Node
 }
 
 // First can be used to access the first attribute without explicitely
 // giving its name.
 func (r Response) First() Response {
-    if len(r.node.GetChildren()) == 0 {
+    if len(r.nodes) == 0 {
         return Response{}
     }
-    return Response{node: r.node.GetChildren()[0]}
+    if len(r.nodes[0].GetChildren()) == 0 {
+        return Response{}
+    }
+    return Response{nodes: []*graph.Node{r.nodes[0].GetChildren()[0]}}
 }
 
 // Attribute moves to the given attribute name. It must be a children of
 // the current attribute. This can be asserted using the IsNil() function.
 func (r Response) Attribute(name string) Response {
-    for _, c := range r.node.GetChildren() {
-        if c.GetAttribute() == name {
-            return Response{node: c}
-            break
+    if len(r.nodes) == 0 {
+        return Response{}
+    }
+    var nodes []*graph.Node
+    for _, n := range r.nodes {
+        for _, c := range n.GetChildren() {
+            if c.GetAttribute() == name {
+                nodes = append(nodes, c)
+            }
         }
     }
-    return Response{}
+
+    return Response{nodes: nodes}
 }
 
 // Property returns the given property by name.
 func (r Response) Property(name string) Property {
-    for _, p := range r.node.GetProperties() {
+    if len(r.nodes) == 0 {
+        return Property{}
+    }
+    for _, p := range r.nodes[0].GetProperties() {
         if p.GetProp() == name {
             return Property{value: p.GetValue()}
         }
@@ -74,15 +86,34 @@ func (r Response) Property(name string) Property {
     return Property{}
 }
 
+// Properties returns a slice of properties by name.
+func (r Response) Properties(name string) []Property {
+    var properties []Property
+    for _, n := range r.nodes {
+        for _, p := range n.GetProperties() {
+            if p.GetProp() == name {
+                properties = append(properties, Property{value: p.GetValue()})
+            }
+        }
+    }
+    return properties
+}
+
 // Uid returns the UID of the current attribute if contained in the response.
 func (r Response) Uid() uint64 {
-    return r.node.GetUid()
+    if len(r.nodes) == 0 {
+        return 0
+    }
+    return r.nodes[0].GetUid()
 }
 
 // Xid returns the XID of the current attribute if contained in the response.
 func (r Response) Xid() string {
     // BUG(r): GetXid() doesn't seem to be supported by the upstream
-    return r.node.GetXid()
+    if len(r.nodes) == 0 {
+        return ""
+    }
+    return r.nodes[0].GetXid()
 }
 
 // String returns the attribute content in RAW format.
@@ -92,13 +123,19 @@ func (r Response) String() string {
 
 // Json returns the attribute content in JSON format.
 func (r Response) Json() string {
-    j, _ := json.MarshalIndent(r.node, "", "    ")
+    if len(r.nodes) == 0 {
+        return ""
+    }
+    j, _ := json.MarshalIndent(r.nodes, "", "    ")
     return string(j)
 }
 
 // IsNil returns true if the attribute is not available in the response.
 func (r Response) IsNil() bool {
-    return r.node == nil
+    if len(r.nodes) == 0 {
+        return true
+    }
+    return false
 }
 
 // Property is a struct that carries the current graph.Value.
