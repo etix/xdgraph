@@ -99,6 +99,17 @@ func (r Response) Properties(name string) []Property {
     return properties
 }
 
+// Each will run the provided function for each elements contained in the
+// response. Example:
+//  xd.First().Attribute("follows").Each(func(r xdgraph.Response) {
+//      fmt.Println(r.Property("name").ToString())
+//  })
+func (r Response) Each(fn func(Response)) {
+    for _, n := range r.nodes {
+        fn(Response{nodes: []*graph.Node{n}})
+    }
+}
+
 // Uid returns the UID of the current attribute if contained in the response.
 func (r Response) Uid() uint64 {
     if len(r.nodes) == 0 {
