@@ -43,23 +43,33 @@ int main() {
     // Skipping the first attribute using First()
     fmt.Println(xd.First().Property("sign").ToString())
 
+    // Check if a property is set (true/false)
+    fmt.Println(xd.First().Property("address").IsNil())
+
     // Traverse multiple attributes
-    fmt.Println(xd.Attribute("me").Attribute("follows").Property("name").ToString())
+    fmt.Println(xd.First().Attribute("follows").Property("name").ToString())
 
     // Use different types
-    fmt.Println(xd.Attribute("me").Attribute("follows").Property("birthdate").ToDate())
+    fmt.Println(xd.First().Attribute("follows").Property("birthdate").ToDate())
 
-    // Check if a property is set (true/false)
-    fmt.Println(xd.Attribute("me").Property("address").IsNil())
+    // Execute a function literal for each matched attribute
+    xd.First().Attribute("follows").Attribute("plays").Each(func(r xdgraph.Response) {
+        fmt.Println(r.Property("name").ToString())
+    })
+
+    // Get multiple properties at once
+    for _, sign := range xd.First().Attribute("follows").Properties("sign") {
+        fmt.Println(sign.ToString())
+    }
 
     // Output the full graph in JSON
     fmt.Println(xd.Json())
 
     // Output a sub-graph in JSON
-    fmt.Println(xd.Attribute("me").Attribute("follows").Json())
+    fmt.Println(xd.First().Attribute("follows").Json())
 }
 ```
-See the example folder for a complete example.
+See the example folder for a complete working example.
 
 ### Supported property types
 [See here](https://github.com/dgraph-io/dgraph/blob/master/query/graph/graphresponse.pb.go) for the list of supported types upstream.
