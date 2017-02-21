@@ -161,7 +161,11 @@ func (p Property) String() string {
 
 // ToString returns the property as a string
 func (p Property) ToString() string {
-	return p.value.GetStrVal()
+	str := p.value.GetStrVal()
+	if len(str) > 0 {
+		return str
+	}
+	return p.value.GetDefaultVal()
 }
 
 // ToBytes returns the property as []byte
