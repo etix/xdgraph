@@ -78,7 +78,7 @@ See the example folder for a complete working example.
 | ----------- | -------------------------- |
 | string      | .ToString()                |
 | []byte      | .ToBytes()                 |
-| int32       | .ToInt()                   |
+| int64       | .ToInt()                   |
 | bool        | .ToBool()                  |
 | float64     | .ToFloat()                 |
 | geom        | .ToGeo()                   |

@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/dgraph-io/dgraph/query/graph"
+	"github.com/dgraph-io/dgraph/protos/graphp"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
@@ -32,15 +32,15 @@ import (
 //  resp, _ := c.Run(...)
 //  xd := xdgraph.ReadResponse(resp)
 //  [...]
-func ReadResponse(resp *graph.Response) *Response {
+func ReadResponse(resp *graphp.Response) *Response {
 	return &Response{
-		nodes: []*graph.Node{resp.GetN()[0]},
+		nodes: []*graphp.Node{resp.GetN()[0]},
 	}
 }
 
 // Response is a struct that carries the current graph.Node.
 type Response struct {
-	nodes []*graph.Node
+	nodes []*graphp.Node
 }
 
 // First can be used to access the first attribute without explicitely
@@ -52,7 +52,7 @@ func (r Response) First() Response {
 	if len(r.nodes[0].GetChildren()) == 0 {
 		return Response{}
 	}
-	return Response{nodes: []*graph.Node{r.nodes[0].GetChildren()[0]}}
+	return Response{nodes: []*graphp.Node{r.nodes[0].GetChildren()[0]}}
 }
 
 // Attribute moves to the given attribute name. It must be a children of
@@ -61,7 +61,7 @@ func (r Response) Attribute(name string) Response {
 	if len(r.nodes) == 0 {
 		return Response{}
 	}
-	var nodes []*graph.Node
+	var nodes []*graphp.Node
 	for _, n := range r.nodes {
 		for _, c := range n.GetChildren() {
 			if c.GetAttribute() == name {
@@ -106,7 +106,7 @@ func (r Response) Properties(name string) []Property {
 //  })
 func (r Response) Each(fn func(Response)) {
 	for _, n := range r.nodes {
-		fn(Response{nodes: []*graph.Node{n}})
+		fn(Response{nodes: []*graphp.Node{n}})
 	}
 }
 
@@ -151,7 +151,7 @@ func (r Response) IsNil() bool {
 
 // Property is a struct that carries the current graph.Value.
 type Property struct {
-	value *graph.Value
+	value *graphp.Value
 }
 
 // String returns the RAW value
@@ -173,8 +173,8 @@ func (p Property) ToBytes() []byte {
 	return p.value.GetBytesVal()
 }
 
-// ToInt returns the property as an int32
-func (p Property) ToInt() int32 {
+// ToInt returns the property as an int64
+func (p Property) ToInt() int64 {
 	return p.value.GetIntVal()
 }
 
