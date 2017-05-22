@@ -9,7 +9,7 @@ import (
 	"github.com/etix/xdgraph"
 
 	"github.com/dgraph-io/dgraph/client"
-	"github.com/dgraph-io/dgraph/query/graph"
+	"github.com/dgraph-io/dgraph/protos"
 	"google.golang.org/grpc"
 )
 
@@ -24,7 +24,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := graph.NewDgraphClient(conn)
+	c := protos.NewDgraphClient(conn)
 
 	req := client.Req{}
 
@@ -80,7 +80,7 @@ func main() {
 
 	xd := xdgraph.ReadResponse(resp)
 
-	fmt.Printf("Clara's UID: %d\n", xd.Attribute("me").Uid())
+	fmt.Printf("Clara's UID: %d\n", xd.Attribute("me").Property("_uid_").ToUid())
 	fmt.Printf("Clara's name: %s\n", xd.Attribute("me").Property("name").ToString())
 	fmt.Printf("Clara's sign (using First()): %s\n", xd.First().Property("sign").ToString())
 
@@ -90,7 +90,7 @@ func main() {
 
 	fmt.Printf("Clara follows:\n")
 	xd.First().Attribute("follows").Each(func(r xdgraph.Response) {
-		fmt.Printf(" - %s (uid %d)\n", r.Property("name").ToString(), r.Uid())
+		fmt.Printf(" - %s (uid %d)\n", r.Property("name").ToString(), r.Property("_uid_").ToUid())
 	})
 
 	fmt.Printf("Signs of people Clara follows:\n")

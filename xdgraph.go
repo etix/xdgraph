@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/dgraph-io/dgraph/protos/graphp"
+	"github.com/dgraph-io/dgraph/protos"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
@@ -32,15 +32,15 @@ import (
 //  resp, _ := c.Run(...)
 //  xd := xdgraph.ReadResponse(resp)
 //  [...]
-func ReadResponse(resp *graphp.Response) *Response {
+func ReadResponse(resp *protos.Response) *Response {
 	return &Response{
-		nodes: []*graphp.Node{resp.GetN()[0]},
+		nodes: []*protos.Node{resp.GetN()[0]},
 	}
 }
 
 // Response is a struct that carries the current graph.Node.
 type Response struct {
-	nodes []*graphp.Node
+	nodes []*protos.Node
 }
 
 // First can be used to access the first attribute without explicitely
@@ -52,7 +52,7 @@ func (r Response) First() Response {
 	if len(r.nodes[0].GetChildren()) == 0 {
 		return Response{}
 	}
-	return Response{nodes: []*graphp.Node{r.nodes[0].GetChildren()[0]}}
+	return Response{nodes: []*protos.Node{r.nodes[0].GetChildren()[0]}}
 }
 
 // Attribute moves to the given attribute name. It must be a children of
@@ -61,7 +61,7 @@ func (r Response) Attribute(name string) Response {
 	if len(r.nodes) == 0 {
 		return Response{}
 	}
-	var nodes []*graphp.Node
+	var nodes []*protos.Node
 	for _, n := range r.nodes {
 		for _, c := range n.GetChildren() {
 			if c.GetAttribute() == name {
@@ -106,25 +106,8 @@ func (r Response) Properties(name string) []Property {
 //  })
 func (r Response) Each(fn func(Response)) {
 	for _, n := range r.nodes {
-		fn(Response{nodes: []*graphp.Node{n}})
+		fn(Response{nodes: []*protos.Node{n}})
 	}
-}
-
-// Uid returns the UID of the current attribute if contained in the response.
-func (r Response) Uid() uint64 {
-	if len(r.nodes) == 0 {
-		return 0
-	}
-	return r.nodes[0].GetUid()
-}
-
-// Xid returns the XID of the current attribute if contained in the response.
-func (r Response) Xid() string {
-	// BUG(r): GetXid() doesn't seem to be supported by the upstream
-	if len(r.nodes) == 0 {
-		return ""
-	}
-	return r.nodes[0].GetXid()
 }
 
 // String returns the attribute content in RAW format.
@@ -151,7 +134,7 @@ func (r Response) IsNil() bool {
 
 // Property is a struct that carries the current graph.Value.
 type Property struct {
-	value *graphp.Value
+	value *protos.Value
 }
 
 // String returns the RAW value
@@ -211,6 +194,11 @@ func (p Property) ToDateTime() time.Time {
 // ToPassword returns the property as a string
 func (p Property) ToPassword() string {
 	return p.value.GetPasswordVal()
+}
+
+// ToUid returns the property as a uint64
+func (p Property) ToUid() uint64 {
+	return p.value.GetUidVal()
 }
 
 // IsNil returns true if the property is not available in the response.

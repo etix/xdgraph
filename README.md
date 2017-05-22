@@ -35,7 +35,7 @@ int main() {
     xd := xdgraph.ReadResponse(resp)
 
     // Get the UID of the "me" attribute
-    fmt.Println(xd.Attribute("me").Uid())
+    fmt.Println(xd.Attribute("me")..Property("_uid_").ToUid())
 
     // Get the "name" property of the "me" attribute
     fmt.Println(xd.Attribute("me").Property("name").ToString())
@@ -83,6 +83,7 @@ See the example folder for a complete working example.
 | float64     | .ToFloat()                 |
 | geom        | .ToGeo()                   |
 | datetime    | .ToDate() or .ToDateTime() |
+| uid         | .ToUid()                   |
 
 ### Note
 Since the [Dgraph](https://github.com/dgraph-io/dgraph/) project is quite young, the APIs can change at any time.
