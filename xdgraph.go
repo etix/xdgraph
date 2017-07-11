@@ -177,13 +177,6 @@ func (p Property) ToGeo() geom.T {
 	return t
 }
 
-// ToDate returns the property as a time.Time
-func (p Property) ToDate() time.Time {
-	var t time.Time
-	t.UnmarshalBinary(p.value.GetDateVal())
-	return t
-}
-
 // ToDateTime returns the property as a time.Time
 func (p Property) ToDateTime() time.Time {
 	var t time.Time
